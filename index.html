@@ -1,1 +1,343 @@
-ht
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cosas que llevaremos</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px 14px;
+      font-family: Arial, sans-serif;
+      background: #fff6f5;
+      color: #443238;
+    }
+
+    main {
+      max-width: 600px;
+      margin: auto;
+    }
+
+    header {
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    h1 {
+      color: #a84d68;
+      font-size: 30px;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      color: #806a70;
+      line-height: 1.5;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 18px;
+      padding: 18px;
+      margin: 16px 0;
+      box-shadow: 0 4px 14px #7c3d4a12;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 13px;
+      margin: 5px 0;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    input, select {
+      border: 1px solid #e5c8d0;
+      background: white;
+    }
+
+    button {
+      border: none;
+      background: #b65d78;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:active {
+      opacity: 0.8;
+    }
+
+    .filtros {
+      display: flex;
+      gap: 7px;
+    }
+
+    .filtros button {
+      font-size: 13px;
+      padding: 10px 4px;
+    }
+
+    .filtros .activo {
+      background: #74364d;
+    }
+
+    ul {
+      padding: 0;
+      list-style: none;
+    }
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f2e5e8;
+    }
+
+    li input[type="checkbox"] {
+      width: 21px;
+      height: 21px;
+      margin: 0;
+      accent-color: #b65d78;
+      flex-shrink: 0;
+    }
+
+    .nombre {
+      flex: 1;
+      overflow-wrap: anywhere;
+    }
+
+    .categoria {
+      display: block;
+      margin-top: 4px;
+      color: #a16c7c;
+      font-size: 12px;
+    }
+
+    .listo .nombre {
+      text-decoration: line-through;
+      color: #999;
+    }
+
+    .eliminar {
+      width: auto;
+      padding: 8px;
+      background: #f6e6ea;
+      color: #81445a;
+      font-size: 12px;
+    }
+
+    #mensaje {
+      text-align: center;
+      color: #8a737b;
+      padding: 15px 0;
+    }
+
+    .aviso {
+      font-size: 12px;
+      line-height: 1.5;
+      color: #806a70;
+    }
+
+    @media (min-width: 500px) {
+      #formulario {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+      }
+
+      #formulario input {
+        grid-column: 1 / -1;
+      }
+
+      #formulario button {
+        grid-column: 1 / -1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<main>
+  <header>
+    <h1> Nuestra escapadita </h1>
+    <p class="subtitulo">
+      🏡 Cosas que llevaremos a la cabaña<br>
+      Para organizarnos entre todas y que no falte nada.
+    </p>
+  </header>
+
+  <section class="panel">
+    <h3>Agregar algo a la lista</h3>
+
+    <form id="formulario">
+      <input
+        id="nombre"
+        type="text"
+        maxlength="100"
+        placeholder="¿Qué vamos a llevar?"
+        required
+      >
+
+      <select id="categoria">
+        <option>Comida</option>
+        <option>Bebestibles</option>
+        <option>Para compartir</option>
+        <option>Para la cabaña</option>
+        <option>Cosas personales</option>
+        <option>Otros</option>
+      </select>
+
+      <button type="submit">+ Agregar a la lista</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h3>Lista de cosas</h3>
+
+    <div class="filtros">
+      <button class="activo" data-filtro="todas">Todas</button>
+      <button data-filtro="pendientes">Pendientes</button>
+      <button data-filtro="listas">Listas</button>
+    </div>
+
+    <ul id="lista"></ul>
+    <p id="mensaje">Todavía no hay cosas agregadas.</p>
+  </section>
+
+  <p class="aviso">
+    Importante: esta versión guarda los datos en el navegador de cada
+    dispositivo. Para que todas las amigas compartan una misma lista
+    y vean los cambios entre sus celulares, necesitaremos conectar
+    una base de datos compartida.
+  </p>
+</main>
+
+<script>
+  const CLAVE = "lista-cabana-pirque";
+  let cosas = [];
+
+  try {
+    cosas = JSON.parse(localStorage.getItem(CLAVE) || "[]");
+    if (!Array.isArray(cosas)) cosas = [];
+  } catch (error) {
+    cosas = [];
+  }
+
+  let filtroActual = "todas";
+
+  const formulario = document.getElementById("formulario");
+  const campoNombre = document.getElementById("nombre");
+  const campoCategoria = document.getElementById("categoria");
+  const lista = document.getElementById("lista");
+  const mensaje = document.getElementById("mensaje");
+
+  function guardar() {
+    localStorage.setItem(CLAVE, JSON.stringify(cosas));
+  }
+
+  function mostrarLista() {
+    lista.replaceChildren();
+
+    const visibles = cosas.filter(function(cosa) {
+      if (filtroActual === "pendientes") return !cosa.lista;
+      if (filtroActual === "listas") return cosa.lista;
+      return true;
+    });
+
+    mensaje.hidden = visibles.length > 0;
+    mensaje.textContent = cosas.length === 0
+      ? "Todavía no hay cosas agregadas. ¡Agrega la primera!"
+      : "No hay cosas en esta sección.";
+
+    visibles.forEach(function(cosa) {
+      const elemento = document.createElement("li");
+
+      if (cosa.lista) elemento.classList.add("listo");
+
+      const casilla = document.createElement("input");
+      casilla.type = "checkbox";
+      casilla.checked = Boolean(cosa.lista);
+      casilla.setAttribute("aria-label", "Marcar como listo");
+
+      casilla.addEventListener("change", function() {
+        cosa.lista = casilla.checked;
+        guardar();
+        mostrarLista();
+      });
+
+      const texto = document.createElement("div");
+      texto.className = "nombre";
+
+      const nombre = document.createElement("span");
+      nombre.textContent = cosa.nombre;
+
+      const categoria = document.createElement("span");
+      categoria.className = "categoria";
+      categoria.textContent = cosa.categoria;
+
+      texto.append(nombre, categoria);
+
+      const eliminar = document.createElement("button");
+      eliminar.className = "eliminar";
+      eliminar.textContent = "Eliminar";
+      eliminar.type = "button";
+
+      eliminar.addEventListener("click", function() {
+        cosas = cosas.filter(function(item) {
+          return item.id !== cosa.id;
+        });
+
+        guardar();
+        mostrarLista();
+      });
+
+      elemento.append(casilla, texto, eliminar);
+      lista.appendChild(elemento);
+    });
+
+    document.querySelectorAll("[data-filtro]").forEach(function(boton) {
+      boton.classList.toggle(
+        "activo",
+        boton.dataset.filtro === filtroActual
+      );
+    });
+  }
+
+  formulario.addEventListener("submit", function(evento) {
+    evento.preventDefault();
+
+    const nombre = campoNombre.value.trim();
+    if (!nombre) return;
+
+    cosas.push({
+      id: Date.now().toString() + Math.random().toString(16).slice(2),
+      nombre: nombre,
+      categoria: campoCategoria.value,
+      lista: false
+    });
+
+    guardar();
+    campoNombre.value = "";
+    filtroActual = "todas";
+    mostrarLista();
+    campoNombre.focus();
+  });
+
+  document.querySelectorAll("[data-filtro]").forEach(function(boton) {
+    boton.addEventListener("click", function() {
+      filtroActual = boton.dataset.filtro;
+      mostrarLista();
+    });
+  });
+
+  mostrarLista();
+</script>
+</body>
+</html>
